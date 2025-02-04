@@ -1,0 +1,42 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: frontend-letsencrypt-nginx
+  namespace: frontend-ns
+spec:
+  acme:
+    email: t.paliwong@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: frontend-letsencrypt-nginx-private-key
+    solvers:
+      # Use the HTTP-01 challenge provider
+      - http01:
+          ingress:
+            class: nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  namespace: frontend-ns
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: / # กรณีทำ rewrite
+    cert-manager.io/issuer: frontend-letsencrypt-nginx
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - 14again.life
+      secretName: frontend-letsencrypt-nginx
+  rules:
+    - host: 14again.life
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-svc
+                port:
+                  number: 80
